@@ -1,82 +1,51 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/food_entry.dart';
 
 class CalendarService {
-  static const _key = 'cal_entries';
-  static const _goalKey = 'daily_goal';
+  final Map<String, List<FoodEntry>> _entriesByDate = {};
 
-  Future<SharedPreferences> get _prefs async => SharedPreferences.getInstance();
-
-  // Helper date string: "yyyy-mm-dd"
-  String dateKey(DateTime d) =>
-      '${d.year.toString().padLeft(4,'0')}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
-
-  Future<Map<String, List<FoodEntry>>> _loadMap() async {
-    final p = await _prefs;
-    final raw = p.getString(_key);
-    if (raw == null) return {};
-    final Map<String, dynamic> decoded = jsonDecode(raw);
-    return decoded.map((k, v) {
-      final list = (v as List).map((e) => FoodEntry.fromJson(e)).toList();
-      return MapEntry(k, list);
-    });
-  }
-
-  Future<void> _saveMap(Map<String, List<FoodEntry>> map) async {
-    final p = await _prefs;
-    final out = map.map((k, v) => MapEntry(k, v.map((e) => e.toJson()).toList()));
-    await p.setString(_key, jsonEncode(out));
-  }
-
+  // ✅ Fetch all entries for a specific date
   Future<List<FoodEntry>> getEntriesFor(DateTime date) async {
-    final m = await _loadMap();
-    return m[dateKey(date)] ?? [];
+    final key = _dateKey(date);
+    return _entriesByDate[key] ?? [];
   }
 
+  // ✅ Add a new entry
   Future<void> addEntry(DateTime date, FoodEntry entry) async {
-    final m = await _loadMap();
-    final k = dateKey(date);
-    final list = m[k] ?? [];
+    final key = _dateKey(date);
+    final list = _entriesByDate[key] ?? [];
     list.add(entry);
-    m[k] = list;
-    await _saveMap(m);
+    _entriesByDate[key] = list;
   }
 
+  // ✅ Update existing entry
   Future<void> updateEntry(DateTime date, FoodEntry entry) async {
-    final m = await _loadMap();
-    final k = dateKey(date);
-    final list = m[k] ?? [];
-    final idx = list.indexWhere((e) => e.id == entry.id);
-    if (idx != -1) {
-      list[idx] = entry;
-      m[k] = list;
-      await _saveMap(m);
+    final key = _dateKey(date);
+    final list = _entriesByDate[key];
+    if (list != null) {
+      final index = list.indexWhere((e) => e.id == entry.id);
+      if (index != -1) list[index] = entry;
     }
   }
 
-  Future<void> removeEntry(DateTime date, String entryId) async {
-    final m = await _loadMap();
-    final k = dateKey(date);
-    final list = m[k] ?? [];
-    list.removeWhere((e) => e.id == entryId);
-    m[k] = list;
-    await _saveMap(m);
+  // ✅ Delete an entry
+  Future<void> removeEntry(DateTime date, String id) async {
+    final key = _dateKey(date);
+    _entriesByDate[key]?.removeWhere((e) => e.id == id);
   }
 
+  // ✅ Get daily goal from SharedPreferences
   Future<int> getDailyGoal() async {
-    final p = await _prefs;
-    return p.getInt(_goalKey) ?? 2000; // default goal
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('dailyGoal') ?? 2000;
   }
 
+  // ✅ Set daily goal and sync it globally
   Future<void> setDailyGoal(int goal) async {
-    final p = await _prefs;
-    await p.setInt(_goalKey, goal);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('dailyGoal', goal);
   }
 
-  // Convenience: total calories for date
-  Future<double> totalCaloriesFor(DateTime date) async {
-    final entries = await getEntriesFor(date);
-    return entries.fold<double>(0.0, (s, e) => s + e.calories);
-  }
+  String _dateKey(DateTime date) =>
+      "${date.year}-${date.month}-${date.day}";
 }

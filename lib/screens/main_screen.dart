@@ -3,6 +3,7 @@ import '../theme/colors.dart';
 import 'settings_screen.dart';
 import 'calendar_screen.dart';
 import 'recipes_screen.dart';
+import 'recipe_detail_screen.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -62,7 +63,9 @@ class MainScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const RecipesScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const RecipesScreen(), // ✅ fixed line
+                      ),
                     );
                   },
                 ),

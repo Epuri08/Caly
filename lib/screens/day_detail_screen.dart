@@ -31,24 +31,27 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
     });
   }
 
-  int get _consumed => _entries.fold(0, (s, e) => s + e.calories);
+  int get _consumed => _entries.fold<int>(0, (s, e) => s + e.calories);
   int get _left => (_dailyGoal - _consumed).clamp(0, _dailyGoal);
 
+  /// Opens dialog to add or edit an entry. Includes time selection.
   Future<void> _openAddDialog({FoodEntry? existing}) async {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final calCtrl = TextEditingController(
-      text: existing != null ? '${existing.calories}' : '',
-    );
+        text: existing != null ? '${existing.calories}' : '');
 
-    // --- Add time support ---
+    // initial time (use existing.time if available and valid)
     TimeOfDay chosen = TimeOfDay.now();
     if (existing != null && existing.time.isNotEmpty) {
-      final parts = existing.time.split(':');
-      if (parts.length == 2) {
-        chosen = TimeOfDay(
-          hour: int.tryParse(parts[0]) ?? 0,
-          minute: int.tryParse(parts[1]) ?? 0,
-        );
+      try {
+        final parts = existing.time.split(':');
+        if (parts.length == 2) {
+          final h = int.tryParse(parts[0]) ?? 0;
+          final m = int.tryParse(parts[1]) ?? 0;
+          chosen = TimeOfDay(hour: h, minute: m);
+        }
+      } catch (_) {
+        chosen = TimeOfDay.now();
       }
     }
 
@@ -56,7 +59,7 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setInnerState) => AlertDialog(
-          title: Text(existing == null ? 'Add Entry' : 'Edit Entry'),
+          title: Text(existing == null ? 'Add entry' : 'Edit entry'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -64,12 +67,13 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
                 controller: nameCtrl,
                 decoration: const InputDecoration(labelText: 'Name'),
               ),
+              const SizedBox(height: 8),
               TextField(
                 controller: calCtrl,
                 decoration: const InputDecoration(labelText: 'Calories'),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Text('Time: ${chosen.format(context)}'),
@@ -91,27 +95,34 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () async {
                 final name = nameCtrl.text.trim();
                 final cal = int.tryParse(calCtrl.text.trim()) ?? 0;
-                final time =
-                    '${chosen.hour.toString().padLeft(2, '0')}:${chosen.minute.toString().padLeft(2, '0')}';
 
-                if (name.isEmpty || cal <= 0) return;
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a name')),
+                  );
+                  return;
+                }
+                if (cal <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Enter a valid calorie number')),
+                  );
+                  return;
+                }
+
+                final timeStr =
+                    '${chosen.hour.toString().padLeft(2, '0')}:${chosen.minute.toString().padLeft(2, '0')}';
 
                 if (existing == null) {
                   final newEntry = FoodEntry(
-                    id: DateTime.now()
-                        .millisecondsSinceEpoch
-                        .toString(),
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
                     name: name,
                     calories: cal,
-                    time: time,
+                    time: timeStr,
                   );
                   await _service.addEntry(widget.date, newEntry);
                 } else {
@@ -119,7 +130,7 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
                     id: existing.id,
                     name: name,
                     calories: cal,
-                    time: time,
+                    time: timeStr,
                   );
                   await _service.updateEntry(widget.date, updated);
                 }
@@ -169,30 +180,21 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
                   onPressed: () => _openAddDialog(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFC0E6),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     fixedSize: const Size(120, 120),
                   ),
-                  child: const Icon(Icons.add,
-                      size: 40, color: Colors.black87),
+                  child: const Icon(Icons.add, size: 40, color: Colors.black87),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                        Text('Tap an entry below to edit'),
-                      ),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tap an entry below to edit')));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFC0E6),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     fixedSize: const Size(120, 120),
                   ),
-                  child: const Icon(Icons.edit,
-                      size: 40, color: Colors.black87),
+                  child: const Icon(Icons.edit, size: 40, color: Colors.black87),
                 ),
               ],
             ),
@@ -209,8 +211,7 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
                 children: [
                   Text(
                     '$_left',
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const Text('cal left'),
                 ],
@@ -225,41 +226,33 @@ class _DayDetailScreenState extends State<DayDetailScreen> {
             // Entry list
             Expanded(
               child: _entries.isEmpty
-                  ? const Center(
-                child: Text('No entries for this day'),
-              )
+                  ? const Center(child: Text('No entries for this day'))
                   : ListView.separated(
                 itemCount: _entries.length,
                 separatorBuilder: (_, __) => const Divider(),
                 itemBuilder: (context, i) {
                   final e = _entries[i];
                   return ListTile(
-                    title: Text(
-                        '${e.calories} cal  —  ${e.name}'),
-                    subtitle: Text(e.time.isNotEmpty
-                        ? 'Time: ${e.time}'
-                        : 'Time: --:--'),
-                    onTap: () => _openAddDialog(existing: e),
-                    onLongPress: () => showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('Delete entry?'),
-                        actions: [
-                          TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(context),
-                              child: const Text('Cancel')),
-                          TextButton(
-                            onPressed: () async {
-                              await _deleteEntry(e.id);
-                              Navigator.pop(context);
-                            },
-                            child: const Text('Delete',
-                                style: TextStyle(
-                                    color: Colors.red)),
+                    title: Text('${e.calories} cal  —  ${e.name}'),
+                    subtitle: e.time.isNotEmpty ? Text('Time: ${e.time}') : null,
+                    onTap: () => _openAddDialog(existing: e), // edit
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Delete entry?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                        if (confirm == true) {
+                          await _deleteEntry(e.id);
+                        }
+                      },
                     ),
                   );
                 },

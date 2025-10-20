@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/food_entry.dart';
 import '../services/calendar_service.dart';
 import 'food_entry_dialog.dart';
@@ -22,9 +23,10 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
     _loadData();
   }
 
+  // ✅ Load entries and synced daily goal
   Future<void> _loadData() async {
     final entries = await _service.getEntriesFor(widget.date);
-    final goal = await _service.getDailyGoal();
+    final goal = await _service.getDailyGoal(); // now synced with SharedPreferences
     setState(() {
       _entries = entries;
       _goal = goal;
@@ -67,7 +69,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _addOrEditEntry(),
-          )
+          ),
         ],
       ),
       body: Padding(
@@ -77,7 +79,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
             Text("Calorie Goal: $_goal", style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 10),
             LinearProgressIndicator(
-              value: _totalCalories / _goal,
+              value: (_totalCalories / _goal).clamp(0.0, 1.0),
               backgroundColor: Colors.grey.shade300,
               color: Colors.green,
               minHeight: 10,

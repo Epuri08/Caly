@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "249910189549",
+    "project_id": "caly-9b1d6",
+    "storage_bucket": "caly-9b1d6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:249910189549:android:581b408011fb2f7be65be4",
+        "android_client_info": {
+          "package_name": "com.Caly.app.csfour"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnF9D-nkMLdGdiEJzPlQbORrmiSPgRUVY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

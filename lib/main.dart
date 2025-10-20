@@ -16,7 +16,7 @@ class CalyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
+    debugShowCheckedModeBanner: false,
       title: 'Caly',
       theme: ThemeData(
         primaryColor: AppColors.pinkPrimary,
@@ -43,7 +43,7 @@ class CalyApp extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
         ),
-        nextScreen: const MainScreen(),
+        nextScreen: const MainMenuScreen(),
         splashIconSize: double.infinity,
         duration: 2500,
         splashTransition: SplashTransition.fadeTransition,

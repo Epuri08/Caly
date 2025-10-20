@@ -27,11 +27,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   /// ✅ Loads all saved calorie entries and converts them into event markers
   Future<void> _loadEvents() async {
     final today = DateTime.now();
-
-    // We'll simulate events for all days that have entries
     final allDates = <DateTime, List<String>>{};
 
-    // Loop through past ~90 days and see which have data
+    // Loop through past ~90 days and see which have entries
     for (int i = 0; i < 90; i++) {
       final date = today.subtract(Duration(days: i));
       final entries = await _service.getEntriesFor(date);
@@ -75,19 +73,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
             focusedDay: _focusedDay,
             calendarFormat: CalendarFormat.month,
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
+            onDaySelected: (selectedDay, focusedDay) async {
               setState(() {
                 _selectedDay = selectedDay;
                 _focusedDay = focusedDay;
               });
 
-              // ✅ Navigate to Day Detail screen (calorie tracker)
-              Navigator.push(
+              // ✅ Open the Day Detail screen
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => DayDetailScreen(date: selectedDay),
                 ),
               );
+
+              // ✅ Reload events when returning to update dots
+              await _loadEvents();
             },
             eventLoader: _getEventsForDay,
             headerStyle: const HeaderStyle(
@@ -105,7 +106,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 shape: BoxShape.circle,
               ),
               selectedDecoration: BoxDecoration(
-                color: Colors.green,
+                color: Color(0xFFAD1457),
                 shape: BoxShape.circle,
               ),
               weekendTextStyle: TextStyle(color: Colors.red),
